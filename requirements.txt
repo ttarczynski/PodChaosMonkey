@@ -1,0 +1,2 @@
+APScheduler==3.10.1
+kubernetes==26.1.0
