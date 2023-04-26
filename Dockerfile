@@ -9,7 +9,7 @@ RUN groupadd -g 999 python && \
 WORKDIR /app
 
 # Copy requirements.txt
-COPY requirements.txt app/app.py .
+COPY requirements.txt .
 
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
