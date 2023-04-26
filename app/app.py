@@ -4,6 +4,7 @@ import logging
 import sys
 import random
 import time
+import os
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from kubernetes import client, config
@@ -65,11 +66,16 @@ def schedule_pod_deletions(schedule, namespace, label_selector, num_pods, jitter
     scheduler.add_job(delete_random_pod, args=[namespace, label_selector, num_pods, jitter], trigger=CronTrigger.from_crontab(schedule))
     scheduler.start()
 
+def load_configuration_from_environment():
+    schedule = os.environ.get('SCHEDULE', '* * * * *')
+    namespace = os.environ.get('NAMESPACE', 'workloads')
+    label_selector = os.environ.get('LABEL_SELECTOR', 'app=nginx')
+    num_pods = int(os.environ.get('NUM_PODS', 2))
+    jitter = int(os.environ.get('JITTER', 10))
+
+    return schedule, namespace, label_selector, num_pods, jitter
+
 if __name__ == '__main__':
     load_kubernetes_config()
-    namespace = 'workloads'
-    label_selector = 'app=nginx'
-    num_pods = 2
-    jitter = 10
-    schedule = '* * * * *'
+    schedule, namespace, label_selector, num_pods, jitter = load_configuration_from_environment()
     schedule_pod_deletions(schedule, namespace, label_selector, num_pods, jitter)

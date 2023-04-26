@@ -90,3 +90,10 @@ Sessionx.vim
 tags
 # Persistent undo
 [._]*.un~
+
+#########
+# Other #
+#########
+
+# Temporary files
+tmp
