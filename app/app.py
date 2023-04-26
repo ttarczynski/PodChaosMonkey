@@ -59,8 +59,8 @@ def delete_random_pod(namespace, label_selector, num_pods, jitter):
         api.delete_namespaced_pod(pod.metadata.name, namespace)
         logger.info(f"Deleted pod {pod.metadata.name} in namespace {namespace} with label selector {label_selector}.")
 
-def schedule_pod_deletions(namespace, label_selector, num_pods, jitter, schedule):
-    logger.info(f'Starting pod deletion schedule with: schedule="{schedule}", namespace="{namespace}", num_pods="{num_pods}", label_selector="{label_selector}", jitter="{jitter}".')
+def schedule_pod_deletions(schedule, namespace, label_selector, num_pods, jitter):
+    logger.info(f'Starting pod deletion schedule with: schedule="{schedule}", namespace="{namespace}", label_selector="{label_selector}", num_pods="{num_pods}", jitter="{jitter}".')
     scheduler = BlockingScheduler()
     scheduler.add_job(delete_random_pod, args=[namespace, label_selector, num_pods, jitter], trigger=CronTrigger.from_crontab(schedule))
     scheduler.start()
@@ -72,4 +72,4 @@ if __name__ == '__main__':
     num_pods = 2
     jitter = 10
     schedule = '* * * * *'
-    schedule_pod_deletions(namespace, label_selector, num_pods, jitter, schedule)
+    schedule_pod_deletions(schedule, namespace, label_selector, num_pods, jitter)
