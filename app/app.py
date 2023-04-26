@@ -8,6 +8,7 @@ import os
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from kubernetes import client, config
+from kubernetes.client.exceptions import ApiException
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,7 +50,12 @@ def delete_random_pod(namespace, label_selector, num_pods, jitter):
     time.sleep(sleep_time)
 
     api = client.CoreV1Api()
-    pods = api.list_namespaced_pod(namespace, label_selector=label_selector).items
+    try:
+        pods = api.list_namespaced_pod(namespace, label_selector=label_selector).items
+    except ApiException as e:
+        logger.error(f"Error listing pods in namespace {namespace} with label selector {label_selector}: {e}")
+        return
+
     if len(pods) == 0:
         logger.warning('No pods found with the given label selector in the specified namespace.')
         return
@@ -57,8 +63,11 @@ def delete_random_pod(namespace, label_selector, num_pods, jitter):
     selected_pods = random.sample(pods, num_pods)
 
     for pod in selected_pods:
-        api.delete_namespaced_pod(pod.metadata.name, namespace)
-        logger.info(f"Deleted pod {pod.metadata.name} in namespace {namespace} with label selector {label_selector}.")
+        try:
+            api.delete_namespaced_pod(pod.metadata.name, namespace)
+            logger.info(f"Deleted pod {pod.metadata.name} in namespace {namespace} with label selector {label_selector}.")
+        except ApiException as e:
+            logger.error(f"Error deleting pod {pod.metadata.name} in namespace {namespace}: {e}")
 
 def schedule_pod_deletions(schedule, namespace, label_selector, num_pods, jitter):
     logger.info(f'Starting pod deletion schedule with: schedule="{schedule}", namespace="{namespace}", label_selector="{label_selector}", num_pods="{num_pods}", jitter="{jitter}".')
