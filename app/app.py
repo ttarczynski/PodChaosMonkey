@@ -20,6 +20,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def load_kubernetes_config():
+    """
+    Load Kubernetes configuration either from in-cluster or local kube-config.
+    Exit with an error if unsuccessful.
+    """
     try:
         config.load_incluster_config()
         logger.info('Successfully loaded in-cluster Kubernetes configuration.')
@@ -70,12 +74,32 @@ def delete_random_pod(namespace, label_selector, num_pods, jitter):
             logger.error(f"Error deleting pod {pod.metadata.name} in namespace {namespace}: {e}")
 
 def schedule_pod_deletions(schedule, namespace, label_selector, num_pods, jitter):
+    """
+    Schedule pod deletions based on provided arguments using a blocking scheduler.
+
+    Args:
+    - schedule (str): Cron expression defining the deletion schedule.
+    - namespace (str): Namespace containing the pods to be deleted.
+    - label_selector (str): Label selector to filter the pods.
+    - num_pods (int): Number of pods to delete at random.
+    - jitter (int): Maximum number of seconds to delay deletion.
+    """
     logger.info(f'Starting pod deletion schedule with: schedule="{schedule}", namespace="{namespace}", label_selector="{label_selector}", num_pods="{num_pods}", jitter="{jitter}".')
     scheduler = BlockingScheduler()
     scheduler.add_job(delete_random_pod, args=[namespace, label_selector, num_pods, jitter], trigger=CronTrigger.from_crontab(schedule))
     scheduler.start()
 
 def load_configuration_from_environment():
+    """
+    Load configuration parameters from environment variables with default values.
+
+    Returns:
+    - schedule (str): Cron expression defining the deletion schedule.
+    - namespace (str): Namespace containing the pods to be deleted.
+    - label_selector (str): Label selector to filter the pods.
+    - num_pods (int): Number of pods to delete at random.
+    - jitter (int): Maximum number of seconds to delay deletion.
+    """
     schedule = os.environ.get('SCHEDULE', '* * * * *')
     namespace = os.environ.get('NAMESPACE', 'workloads')
     label_selector = os.environ.get('LABEL_SELECTOR', 'app=nginx')
